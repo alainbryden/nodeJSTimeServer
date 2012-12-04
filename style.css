@@ -1,0 +1,13 @@
+html {
+    height: 100%;
+}
+body { 
+    font-family: "Lucida Console", Monaco, monospace;
+    font-size: 0.8em;
+    background-color: #dbffe5;
+    background-image: linear-gradient(to bottom, #C2FFD2 0%, #EFEFEF 100%);
+    background-attachment: fixed;
+}
+img { 
+    border: 0; 
+}
