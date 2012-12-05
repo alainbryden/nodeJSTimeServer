@@ -11,3 +11,16 @@ body {
 img { 
     border: 0; 
 }
+.time { 
+    color: #103090; 
+}
+#peerTimes li {
+    padding-left: 6px;
+}
+.ip {
+    float: left;
+    width: 170px; 
+}
+.dateTime {
+    width: auto;  
+}

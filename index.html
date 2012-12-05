@@ -8,26 +8,58 @@
         <script src="/socket.io/socket.io.js"></script>
         <script>
             $(function(){
+                const updateInterval = 1000; 
                 var iosocket = io.connect();
+                $('#clientTime').text((new Date()).toLocaleString());
      
                 iosocket.on('connect', function () {
                     $('#connectionStatus').text('Connected');
+                    
+                    var updateLoop = setInterval( function() {
+                        var localDate = new Date();
+                        $('#clientTime').text(localDate.toLocaleString());
+                        iosocket.send(localDate);
+                    }, updateInterval);
      
                     iosocket.on('serverTime', function(objDate) {
                         $('#serverTime').text((new Date(objDate)).toLocaleString());
-                        $('#clientTime').text((new Date()).toLocaleString());
                     });
-                    
+                    iosocket.on('clientTime', function(clientTimeDelimited) {
+                        var client = clientTimeDelimited.split(',')[0];
+                        var clientId = client.replace(/\./g, "_").replace(/:/g, "__")
+                        var clientTime = clientTimeDelimited.split(',')[1];
+                        var clientElem = $('#' + clientId);
+                        
+                        if( clientTime == 0 )
+                            clientElem.remove();
+                        else
+                        {
+                            if( clientElem.length == 0 )
+                            {
+                                $('#peerTimes').append($('<li id="' + clientId + '"></li>'));
+                                clientElem = $('#' + clientId);
+                            }
+                            clientElem.empty();
+                            clientElem.append($('<span class="ip"></span>').text(client.split(':')[0]));
+                            clientElem.append($('<span class="dateTime time"></span>').text((new Date(clientTime)).toLocaleString()));
+                        }
+                    });                        
                     iosocket.on('disconnect', function() {
                         $('#connectionStatus').text('Disconnected');
                     });
+                    
+                    
                 });
+                
             });
         </script>
+        <title>Node.js Time Server</title>
     </head>
     <body>
         Status: <span id="connectionStatus">Disconnected</span><br><br>
-        Server Time: <span id="serverTime">?</span><br><br>
-        Client Time: <span id="clientTime">?</span>
+        Server Time: <span id="serverTime" class="time">?</span><br><br>
+        Client Time: <span id="clientTime" class="time">?</span><br><br>
+        <strong>Peers</strong>
+        <ol id="peerTimes"></ol>
     </body>
 </html>
