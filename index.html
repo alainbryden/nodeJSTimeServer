@@ -8,7 +8,7 @@
         <script src="/socket.io/socket.io.js"></script>
         <script>
             $(function(){
-                const updateInterval = 1000; 
+                var updateInterval = 1000; 
                 var iosocket = io.connect();
                 $('#clientTime').text((new Date()).toLocaleString());
      
@@ -40,12 +40,13 @@
                                 clientElem = $('#' + clientId);
                             }
                             clientElem.empty();
-                            clientElem.append($('<span class="ip"></span>').text(client.split(':')[0]));
+                            clientElem.append($('<span class="ip" title="Port ' + client.split(':')[1] + '" ></span>').text(client.split(':')[0]));
                             clientElem.append($('<span class="dateTime time"></span>').text((new Date(clientTime)).toLocaleString()));
                         }
                     });                        
                     iosocket.on('disconnect', function() {
                         $('#connectionStatus').text('Disconnected');
+                        $('#peerTimes').empty();
                     });
                     
                     
