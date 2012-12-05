@@ -1,0 +1,19 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+    <head>
+        <meta http-equiv="Content-Language" content="en-ca">
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link rel="stylesheet" href="style.css" type="text/css"> 
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" ></script>
+        <script src="/socket.io/socket.io.js" ></script>
+        <script src="TimeServer-client.js" ></script>
+        <title>Node.js Time Server</title>
+    </head>
+    <body>
+        Status: <span id="connectionStatus">Disconnected</span><br><br>
+        Client Time: <span id="clientTime" class="time">?</span><br>
+        Server Time: <span id="serverTime" class="time">?</span><br><br>
+        <strong>Peers</strong>
+        <ol id="peerTimes"></ol>
+    </body>
+</html>

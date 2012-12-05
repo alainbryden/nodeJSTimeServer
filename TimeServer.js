@@ -1,58 +1,57 @@
-const PORT = 8008;
-const pollingInterval = 1000; 
+//Consts
+var PORT = 8008;
+var pollingInterval = 1000; 
+var redisDataExpiration = 60*60;
 
-var fs = require('fs')
-    , connect = require('connect')
-    , socketio = require('socket.io')
-    , redis = require('redis'); 
+//Libraries
+var connect = require('connect')        //HTTP Server
+    , socketio = require('socket.io')   //SocketIO
+    , redis = require('redis');         //Redis data storage
 
-var server = connect.createServer(connect.static(__dirname))
-    .listen(PORT, function() { console.log('Listening at: http://localhost:' + PORT);}
-    );
+var server = connect.createServer(connect.static(__dirname + '/web'))
+                    .listen(PORT, function() { console.log("Server's up at: http://localhost:" + PORT);} );
 var io = socketio.listen(server);
     
 var redisClient = redis.createClient();
-redisClient.on("error", function (err) {
-    console.log("Error " + err);
-});
+redisClient.on("error", function (err) { console.log("Redis Error " + err); });
 
 var polling = setInterval( function() {
     if( io.sockets.clients().length > 0) {
         //Send the current server time.
-        io.sockets.emit('serverTime', new Date());
+        io.sockets.emit('serverTime', new Date().getTime());
         //Todo: Collect all client data and send in bulk.        
     }
 }, pollingInterval);
 
-io.sockets.on('connection', function (socket) {    
-    redisClient.set(strSocketAddress(socket), 0 /*[]*/);
+io.sockets.on('connection', function (client) {    
     //Store the client's time in redis to be broadcast to other clients
-    socket.on('message', setClientValue(socket, 'clientTime'));
+    client.on('message', setClientValue(client, 'clientTime'));
     //Todo: Allow Clients to specify an alias
-    //socket.on('clientName', setClientValue(socket, 'clientName'));
-    socket.on('disconnect', function() { 
-        redisClient.del(socket.handshake.address);
+    //client.on('clientName', setClientValue(client, 'clientName'));
+    client.on('disconnect', function() { 
+        redisClient.del('clients:' + strSocketAddress(client));
         if( io.sockets.clients().length > 0)
-            socket.broadcast.emit('clientTime', strSocketAddress(socket) + ',' + 0);
+            client.broadcast.emit('clientTime', strSocketAddress(client) + ',' + 0);
     });
 });
 
 /* Returns a function that will take a socket.io event data and store it in the 
  * specified property for the corresponding client's redis data entry. */
-function setClientValue(socket, property) {
+function setClientValue(client, property) {
     return function(data) {
-        var strAddress = strSocketAddress(socket);
-        redisClient.set(strAddress, data); 
+        var strAddress = strSocketAddress(client);
+        redisClient.hset('clients:' + strAddress, property, data); 
+        redisClient.expire('clients:' + strAddress, redisDataExpiration); 
         
         //Todo: instead of broadcasting to all clients right away, wait until next server time update
-        socket.broadcast.emit(property, strAddress + ',' + data);
+        client.broadcast.emit(property, strAddress + ',' + data);
         
         /* Todo: To store multiple values, deserialize current value, change property, reserialize and store?
-        redisClient.get(socket.handshake.address, function(err, reply) {
+        redisClient.get(client.handshake.address, function(err, reply) {
             if(reply) {
                 reply[property] = objDate;
             } else {
-                console.log("No data exists for " + socket.handshake.address);
+                console.log("No data exists for " + client.handshake.address);
             }
         });
         */
