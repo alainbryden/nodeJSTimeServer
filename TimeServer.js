@@ -23,15 +23,29 @@ var polling = setInterval( function() {
     }
 }, pollingInterval);
 
-io.sockets.on('connection', function (client) {    
+io.sockets.on('connection', function (client) { 
+    var strAddress = strSocketAddress(client); 
+    redisClient.hget('clients:' + strAddress, 'clientName', function(err, obj) {
+        //If we have this client's alias stored, send it to them.
+        client.emit('clientName', err || obj == null ? client.handshake.address.address : obj);
+    });
+  
     //Store the client's time in redis to be broadcast to other clients
-    client.on('message', setClientValue(client, 'clientTime'));
-    //Todo: Allow Clients to specify an alias
-    //client.on('clientName', setClientValue(client, 'clientName'));
+    client.on('clientTime', setClientValue(client, 'Time'));
+    //Allow Clients to specify an alias
+    client.on('clientName', setClientValue(client, 'Name'));
+    //Allow late arriving clients to get the names of active peers
+    client.on('whoIs', function(ipQuery) { 
+        redisClient.hget('clients:' + ipQuery, 'Name', function(err, obj) {
+            //If we have this client's alias stored, send it to them.
+            client.emit('peerName', ipQuery + ',' + (err || obj == null ? "" : obj));
+        });
+    });
+    
     client.on('disconnect', function() { 
-        redisClient.del('clients:' + strSocketAddress(client));
+        redisClient.del('clients:' + strAddress);
         if( io.sockets.clients().length > 0)
-            client.broadcast.emit('clientTime', strSocketAddress(client) + ',' + 0);
+            client.broadcast.emit('peerTime', strAddress + ',' + 0);
     });
 });
 
@@ -43,18 +57,8 @@ function setClientValue(client, property) {
         redisClient.hset('clients:' + strAddress, property, data); 
         redisClient.expire('clients:' + strAddress, redisDataExpiration); 
         
-        //Todo: instead of broadcasting to all clients right away, wait until next server time update
-        client.broadcast.emit(property, strAddress + ',' + data);
-        
-        /* Todo: To store multiple values, deserialize current value, change property, reserialize and store?
-        redisClient.get(client.handshake.address, function(err, reply) {
-            if(reply) {
-                reply[property] = objDate;
-            } else {
-                console.log("No data exists for " + client.handshake.address);
-            }
-        });
-        */
+        //Todo: instead of broadcasting to all clients right away, wait until next server time update?
+        client.broadcast.emit('peer' + property, strAddress + ',' + data);
     }
 }
 

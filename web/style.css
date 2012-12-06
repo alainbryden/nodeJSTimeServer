@@ -17,11 +17,14 @@ img {
 #peerTimes li {
     padding-left: 4px;
 }
-.ip {
+.alias {
     display: inline-block;
-    width: 170px; 
+    width: 130px; 
     margin-right: 12px;
 }
 .dateTime {
     width: auto;  
+}
+#clientAlias {
+    
 }
